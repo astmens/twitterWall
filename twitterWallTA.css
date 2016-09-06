@@ -1,0 +1,32 @@
+.form-width-1{
+    //width: 100px;
+}
+
+.form-width-2{
+    //width: 150px;
+}
+
+.zId1{
+    z-index: 1;
+}
+.zId2{
+    z-index: 2;
+}
+
+.hidden {
+    display: none;
+}
+
+#searchInput{
+    width: 200px;
+}
+#radiusInput {
+    width: 70px;
+}
+#placeInput {
+    width: 105px;
+}
+#languageInput {
+    width: 105px;
+    padding-right: 22px;
+}
