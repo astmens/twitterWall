@@ -35,51 +35,130 @@ function setActions(){
     
     jQuery("#clearMenu").click(function(){ localStorage.clear();});
 }
-
+function toggleSetName(elem){
+    if(elem.innerHTML === "Show settings"){
+        elem.innerHTML = "Hide settings";
+    }
+    else{
+        elem.innerHTML = "Show settings";
+    }
+    
+}
+/* --- localStorage --- */
+//var dataKeysName = "myKeys";
+var timeKeysName = "timeID";
 function localStorageGetData(){
-        var myKeys = localStorage.getItem("myKeys");
-        if (myKeys){
-            var saveArrId = myKeys.split(",");
-            console.log("myKeys: "+ (typeof saveArrId)+" "+saveArrId);
-            for (var id in saveArrId) {
-                //read the stored values:
-                var key = saveArrId[id];
-                var value = localStorage.getItem(key);
-                // set the DOM elements:
-                jQuery("#"+key).val(value)
-                console.log("Got: "+key+": "+ value );
+        //var myKeys = localStorage.getItem(dataKeysName);
+        var timeKeys = localStorage.getItem(timeKeysName);
+        
+        //console.log(dataKeysName+": "+myKeys);
+        console.log(timeKeysName+": "+timeKeys);
+        if (timeKeys){
+            timeKeys = JSON.parse(timeKeys);
+            for (var i in timeKeys){
+                var timeID = timeKeys[i];
+                var dataset = localStorage.getItem(timeID);
+                console.log("timeID: "+timeID+" data: "+dataset);
+                var dataObj = JSON.parse(dataset);
+                //console.log(dataKeysName+": "+ (typeof dataKeys)+" "+dataKeys);
+                for (var key in dataObj) {
+                    //read the stored values:
+                    var value = dataObj[key];
+                    // update the DOM element values:
+                    jQuery("#"+key).val(value)
+                    //console.log("Got: "+key+": "+ value );
+                }
+                populateSettings(timeID, dataObj);
             }
         }
 
 }
 
 function localStorageSaveData(){
-    var saveArrId = ["timeInput", "searchInput", "placeInput", "radiusInput", "geocodeInput", "languageInput", "placeCurr", "geocodeCurr"];
-    localStorage.setItem("myKeys", saveArrId);
-    for (var id in saveArrId){
-        var key = saveArrId[id];
+    var dataKeys = ["searchInput", "placeInput", "radiusInput", "geocodeInput", "languageInput", "placeCurr", "geocodeCurr"];
+    var timeKeys = JSON.parse(localStorage.getItem(timeKeysName));
+    var timeID = jQuery("#timeInput").val(); // get current dataset timeID
+    if (!timeKeys){
+        timeKeys = [];
+    }
+    if ((timeKeys.indexOf(timeID) === -1) ){
+        timeKeys.push(timeID);
+    }
+    localStorage.setItem(timeKeysName, JSON.stringify(timeKeys)); // 
+    //localStorage.setItem(dataKeysName, JSON.stringify(dataKeys)); // store these with know name stored in global var dataKeysName
+    var dataObj = {};
+    for (var id in dataKeys){
+        var key = dataKeys[id];
         var value = jQuery("#"+key).val();
-        localStorage.setItem(key, value);
+        dataObj[key] = value;
+        //localStorage.setItem(key, value);
         console.log(key+": "+ value );
     }
+    
+    localStorage.setItem(timeID, JSON.stringify(dataObj));
     /*
-    var searchInput = jQuery("#searchInput").val();
-    var placeInput = jQuery("#placeInput").val();
-    var radiusInput = jQuery("#radiusInput").val();
-    var geoCodeInput = jQuery("#geocodeInput").val();
-    var languageInput = jQuery("#languageInput").val();
-    
-    var placeCurr = jQuery("#placeCurr").val();
-    var geoCodeCurr = jQuery("#geocodeCurr").val();
+
     */
+}
+
+
+function populateSettings(timeID, dataObj){
+    var settingDiv = document.getElementById("settingsCollapseDiv");
+    var docFrag = document.createDocumentFragment();
+    var parentDiv = document.createElement("div");
+    jQuery(parentDiv).attr({"class": "panel-body form-inline settingSetDiv settingSetDiv"+timeID});
+    //parentDiv.className = "panel-body form-inline settingSetDiv"+timeID;
+    var labeled = ["Search", "Place", "Radius", "Language"];
+    var hidden = ["timeInput", "geocodeInput", "geocodeCurr", "placeCurr"];
     
+    for (var i in labeled){
+        var Name = labeled[i];
+        var name = Name.toLowerCase();
+        var label = document.createElement("label");
+        jQuery(label).attr({"class": "setLabel", 
+        "for": name+"InputSet"+timeID}).text(Name+":");
+        parentDiv.appendChild(label);
+        var input = document.createElement("input");
+        jQuery(input).attr({"type": "text", "class": "form-control setInput", "id": name+"InputSet"+timeID, "value": dataObj[name+"Input"], "disabled": true});
+        parentDiv.appendChild(input);
+    }
+    for (var i in hidden){
+        var input = document.createElement("input");
+        jQuery(input).attr({ "type": "text", "class": "hidden", "id": name+"Set"+timeID, "value": dataObj[name] });
+        parentDiv.appendChild(input);
+    }
+    
+    var button = document.createElement("button");
+        jQuery(button).attr({ "class": "btn btn-default btnMargin", "id":"removeSet"+timeID, "onclick":"removeThisSet(this)" }).html("Remove this set <span class='glyphicon glyphicon-remove' aria-hidden='true'></span>");
+        parentDiv.appendChild(button);
+    
+    docFrag.appendChild(parentDiv);
+    
+    settingDiv.appendChild(docFrag);
+    
+}
+
+function removeThisSet(elem){
+    var id = elem.getAttribute("id");
+    var time = id.split("removeSet")[1];
+    var timeKeys = JSON.parse(localStorage.getItem(timeKeysName));
+    var idx = timeKeys.indexOf(time);
+    if ( (idx > -1) && (time != null) ){
+        timeKeys.splice(idx,1);
+        console.log("new timeKeys:"+timeKeys);
+        localStorage.setItem(timeKeysName, JSON.stringify(timeKeys)); // remove the key
+        localStorage.removeItem(time);  // remove the data
+    }
+    // remove the setting entry displayed:
+    var parent = elem.parentNode;
+    parent.parentNode.removeChild(parent);
 }
 
 function inputFormSubmit(){
     var fName = arguments.callee.toString().match(/function ([^\(]+)/)[1];
     console.log(fName+": "+jQuery("#inputForm").serialize());
     var seconds = Math.round(new Date().getTime() / 1000);
-    jQuery("#timeInput").val(seconds);
+    jQuery("#timeInput").val(""+seconds);
     localStorageSaveData();
     return true;
 }
@@ -131,6 +210,7 @@ function setCurrentLocation(){
     //jQuery("#radiusInput").val(radius);
 }
 
+/* set some default settings before anything is saved...*/
 function defaultSearch(){
     var response = "parseQuote";
     var text = "@twitterapi";
@@ -262,33 +342,38 @@ var parseLocation = function (jsonp){
     //jQuery("#popoverLink").click(setCurrentLocation);
 }
 
-/* Get coordinates from Place name provided in input */
+/* Get coordinates from Place name provided in input: this is run in case of change in placeInput input field */
 function getCoordinates(){
     var text = encodeURI( jQuery("#placeInput").val() );
     var radius = encodeURI( jQuery("#radiusInput").val() );
     var latitude = "";
     var longitude = "";
+    if (text){
+        var url = "https://nominatim.openstreetmap.org/search?format=json&q="+text;
+        // https://api.twitter.com/1.1/search/tweets.json?q=%40twitterapi
+        // https://demo.suitepad.systems/1.1/search/tweets.json?q=%40twitterapi
 
-    var url = "https://nominatim.openstreetmap.org/search?format=json&q="+text;
-    // https://api.twitter.com/1.1/search/tweets.json?q=%40twitterapi
-    // https://demo.suitepad.systems/1.1/search/tweets.json?q=%40twitterapi
-
-    console.log("url: "+url);
-    jQuery.ajax({
-        url: url, 
-        dataType: "json", 
-        success: function(data, status) {
-            if( status == "success"){
-            console.log( "stat: " + status + " lat:", data[0].lat + " lon: " + data[0].lon );
-            // grab only the first result:
-            latitude = data[0].lat;
-            longitude = data[0].lon;
-            //jQuery("#latInput").val(data[0].lat);
-            //jQuery("#longInput").val(data[0].lon);
-            jQuery("#geocodeInput").val(""+latitude+","+longitude+","+radius);
-            console.log("geoIn:"+jQuery("#geocodeInput").val());
-            }
-        }});
+        console.log("url: "+url);
+        jQuery.ajax({
+            url: url, 
+            dataType: "json", 
+            success: function(data, status) {
+                if( status == "success"){
+                console.log( "stat: " + status + " lat:", data[0].lat + " lon: " + data[0].lon );
+                // grab only the first result:
+                latitude = data[0].lat;
+                longitude = data[0].lon;
+                //jQuery("#latInput").val(data[0].lat);
+                //jQuery("#longInput").val(data[0].lon);
+                jQuery("#geocodeInput").val(""+latitude+","+longitude+","+radius);
+                updateRadius();
+                console.log("geoIn:"+jQuery("#geocodeInput").val());
+                }
+            }});
+    }
+    else {
+        jQuery("#geocodeInput").val(""); // delete geocode information!
+    }
 
     /*
     jQuery.getJSON(url, function(jsonp){

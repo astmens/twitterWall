@@ -17,6 +17,20 @@
     display: none;
 }
 
+.setLabel{
+    width: 82px;
+    margin-left: 14px;
+}
+.form-control.setInput{
+    width: 120px;
+}
+.settingSetDiv{
+    border-style: groove;
+}
+.btnMargin{
+    margin-left: 20px;
+}
+
 #searchInput{
     width: 200px;
 }

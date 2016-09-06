@@ -28,9 +28,9 @@
     
         <nav class="navbar navbar-default">
           <div class="container-fluid">
-            <!-- Brand and toggle get grouped for better mobile display -->
+            <!-- Stays visible also on mobile display -->
             <div class="navbar-header">
-              <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+              <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-for-navbar-collapse-1" aria-expanded="false">
                 <span class="sr-only">Toggle navigation</span>
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
@@ -40,28 +40,27 @@
                 <li class="dropdown">
                   <a href="#" class="dropdown-toggle navbar-brand" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-twitter-square" aria-hidden="true"></i> Wall <span class="caret"></span></a>
                   <ul class="dropdown-menu" id="wallMenu">
-                        <li><a href="" id="clearMenu">Clear settings</a></li>
+                    <li><a href="#settingsCollapseDiv" onclick="toggleSetName(this)" class="" data-toggle="collapse" data-target="#settingsCollapseDiv" aria-expanded="false">Show settings</a></li>
                     <li role="separator" class="divider"></li>
-                    <li><a href="#">Separated link</a></li>
-                    <li role="separator" class="divider"></li>
-                    <li><a href="#">One more separated link</a></li>
+                    <li><a href="" id="clearMenu">Clear all settings</a></li>
+
                   </ul>
                 </li>
               </ul>
             </div>
 
-            <!-- Collect the nav links, forms, and other content for toggling -->
-            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <!-- Collect the content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-for-navbar-collapse-1">
               
-              <form class="navbar-form navbar-left form-group" id= "inputForm">
+              <form class="navbar-form navbar-left form-group form-inline" id= "inputForm">
                 <div class="form-group">
                   <div class="form-group form-width-2">
-                    <label class="sr-only" for="searchInput">Search text</label>
+                    <label class="visible-xs-inline-block" for="searchInput">Search text</label>
                     <input type="text" class="form-control" placeholder="Text" name="q" id="searchInput" value="">
                   </div>
                   <div class="form-group">
                     <div class="form-group form-width-2">
-                        <label class="sr-only" for="placeInput">Location</label>
+                        <label class="visible-xs-inline-block" for="placeInput">Location</label>
                         <input type="text" class="form-control zId1" placeholder="Location" name="" id="placeInput" onchange="">
                         <a href="#" class="zId2 popovers" onclick="" id="locInfoLink" >
                             <span class="glyphicon glyphicon-info-sign zId2" id="locInfo" aria-hidden="true"></span>
@@ -75,13 +74,13 @@
                         <input type="text" class="hidden" name="geocode" id="geocodeInput" value="" display=""></input>
                     </div>
                     <div class="form-group form-width-1">
-                        <label class="sr-only" for="radiusInput">Radius</label>
+                        <label class="visible-xs-inline-block" for="radiusInput">Radius</label>
                         <input type="text" class="form-control" placeholder="Radius" name="" id="radiusInput">
                     </div>
                   </div>
                   
                   <div class="form-group form-width-1 has-feedback" id="languageInputDiv">
-                        <label class="sr-only" for="languageInput">Language</label>
+                        <label class="visible-xs-inline-block" for="languageInput">Language</label>
                         <input type="text" class="form-control" placeholder="Language" name="lang" id="languageInput" onchange="validLanguage(this)">
                         <span class="glyphicon form-control-feedback" id="languageFeedback" aria-hidden="true"></span>
                   </div>
@@ -89,6 +88,36 @@
                 <button type="submit" class="btn btn-default">Search</button>
               </form>
             </div><!-- /.navbar-collapse -->
+            
+            <!-- Collect the SETTING content for toggling -->
+            <div class="collapse panel-collapse" id="settingsCollapseDiv">
+                
+                <!-- Template...
+                <div class="panel-body form-inline settingSetDiv hidden">
+
+                    <label class="setLabel" for="searchInputSet">Search text:</label>
+                    <input type="text" class="form-control setInput" id="searchInputSet" value="" disabled>
+                    
+                    <label class="setLabel" for="placeInputSet">Location:</label>
+                    <input type="text" class="form-control setInput" id="placeInputSet" disabled>
+                  
+                    <label class="setLabel" for="radiusInputSet">Radius:</label>
+                    <input type="text" class="form-control setInput" id="radiusInputSet" disabled>
+                    
+                    <label class="setLabel" for="languageInputSet">Language:</label>
+                    <input type="text" class="form-control setInput" id="languageInputSet" disabled>
+
+                    <input type="text" class="hidden" id="timeInputSet">
+                    <input type="text" class="hidden" id="placeCurrSet">
+                    <input type="text" class="hidden" id="geocodeCurrSet">
+                    <input type="text" class="hidden" id="geocodeInputSet">
+                    
+                    <button class="btn btn-default btnMargin" id="removeSet" onclick="removeThisSet(this)">Remove this set <span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+                  
+                </div>
+                -->
+                
+            </div><!-- /.panel-collapse -->
           </div><!-- /.container-fluid -->
         </nav>
 
