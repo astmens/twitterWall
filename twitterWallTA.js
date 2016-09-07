@@ -1,21 +1,18 @@
 jQuery.noConflict();
 
-
-//console.log(getAllNames());
-//console.log(getName("Eu"));
-//console.log(getCodeFromText("LV"));
-//console.log(getCodeFromText("Lv"));
 //console.log(getCodeFromText("latvian"));
 
 window.onload = function onLoadExec(){
+    localStorageGetData();
+    
+    setActions();
+        
     getCurrentLocation();
     
     //defaultSearch();
     
-    setActions();
-    
     //getCoordinates();
-    localStorageGetData();
+
 }
 
 /* hide popover when clicked on document and it is visible */
@@ -28,10 +25,19 @@ jQuery(document).click(function(){
 });
 
 function setActions(){
+    var tweetCallback = "parseTweets";
+
+    //var url = "https://api.twitter.com/1.1/search/tweets.json"; // {"errors":[{"code":32,"message":"Could not authenticate you."}]}
+    //var url = "https://demo.suitepad.systems/1.1/search/tweets.json"; // This site can’t be reached ERR_CONNECTION_REFUSED; demo.suitepad.systems refused to connect.
+    var url = "http://demo.suitepad.systems/1.1/search/tweets.json"; // gets JSON file!!!
+
+
     // get the coordinates from place name, when it is entered:
     jQuery("#placeInput").change(getCoordinates);
     jQuery("#radiusInput").change(updateRadius);
     jQuery("#inputForm").submit(function(){ return inputFormSubmit()});
+    jQuery("#inputForm").attr("action", url);
+    jQuery("#tweetCallback").val(tweetCallback);
     
     jQuery("#clearMenu").click(function(){ localStorage.clear();});
 }
@@ -160,7 +166,8 @@ function inputFormSubmit(){
     var seconds = Math.round(new Date().getTime() / 1000);
     jQuery("#timeInput").val(""+seconds);
     localStorageSaveData();
-    return true;
+    getNewTweets(); // insted submitting issue axaj request... 
+    return false; // if request is posted as FORM, then response is offered as file download not JSON data for parsing... cancel submit!
 }
 
 // hide the popover:
@@ -177,7 +184,6 @@ function updateRadius(){
 }
 
 function updateGeocodeRadius(radius, geocodeId){
-    //var radius = jQuery("#radiusInput").val();
     var geocode = jQuery("#"+geocodeId).val();
     
     var geoArr = geocode.split(',');
@@ -204,15 +210,14 @@ function setCurrentLocation(){
     jQuery("#placeInput").val(location);
     
     updateRadius(); // correct the radius
-    
-    //jQuery("#latInput").val(jQuery("#latCurr").val());
-    //jQuery("#longInput").val(jQuery("#longCurr").val());
-    //jQuery("#radiusInput").val(radius);
-}
+    }
 
-/* set some default settings before anything is saved...*/
+/* set some default settings before anything is saved...
+ * Geolocalization: The search operator “near” isn’t available in API, but there is a more precise way to restrict your query by a given location using the geocode parameter specified with the template “latitude,longitude,radius”, for example, “37.781157,-122.398720,1mi” "near:X within:Ykm" pair
+ * https://twitter.com/search?q=Jumis%20near%3ARiga%20within%3A10km&src=typd
+ 
+*/
 function defaultSearch(){
-    var response = "parseQuote";
     var text = "@twitterapi";
     var location = "Zurich";
     var latitude = "47.377938";
@@ -220,11 +225,10 @@ function defaultSearch(){
     var radius = "10km";
     var language = "en";
     
-    //document.getElementById("searchInput").value = text;
     jQuery("#searchInput").val(text);
     jQuery("#placeInput").val(location);
     jQuery("#geocodeInput").val(latitude+","+longitude+","+radius);
-    //jQuery("#logInput").val(longitude);
+
     jQuery("#radiusInput").val(radius);
     jQuery("#languageInput").val(language);
     
@@ -252,44 +256,45 @@ function validLanguage(elem){
 }
 
 
-function getNewQuote(){
-    var rand = Math.floor(Math.random()*65536);
-    var response = "parseQuote";
-    var text = "@twitterapi"
-    var latitude = "47.377938";
-    var longitude = "8.5379958";
-    var radius = "10km";
-    var language = "en";
-    var url = "https://api.twitter.com/1.1/search/tweets.json?q="+text+"&geocode="+latitude+","+longitude+","+radius+"&lang="+language+"callback="+response;
-    // https://api.twitter.com/1.1/search/tweets.json?q=%40twitterapi
-    // https://demo.suitepad.systems/1.1/search/tweets.json?q=%40twitterapi
-    //Cross-Origin Request Blocked for JSON reqs
-    //var url = "http://quotesondesign.com/wp-json/posts?filter[orderby]=rand&filter[posts_per_page]=1";
-     // http://labs.bible.org/api/?passage=random
-    console.log("rand: "+rand);
-    console.log("url: "+url);
-    jQuery.ajax({url: url, dataType: "jsonp"});
-    /*
-    jQuery.getJSON(url, function(jsonp){
-        jQuery("#jsonResponse").html(JSON.stringify(jsonp, null, 2));
-        var html = "";
-        jsonp.forEach(function(val){
-            var keys = Object.keys(val);
-            keys.forEach(function(key){
-                html += "key: "+ key + "val: "+ val[key];
-            });
-            
-        });
+function makePopover(){
+    // make popover:
+    var city = jQuery("#placeCurr").val();
+    jQuery("#locInfoLink").popover({
+        "content": "Enter location name<br>or<br>set location to: <a href='\#' id='popoverLink' onclick='setCurrentLocation()'><b> "+ city +"</b></a>",
+        placement: "bottom",
+        "data-toggle": "popover",
+        triger: "focus",
+        delay: 100,
+        html:true
     });
-    setShareLink();
-    */
     
+}
+
+/*...*/
+function getNewTweets(){
+    // https://api.twitter.com/1.1/search/tweets.json?q=%40twitterapi
+    // http://demo.suitepad.systems/1.1/search/tweets.json?q=%40twitterapi
+    var fName = arguments.callee.toString().match(/function ([^\(]+)/)[1];
+    var url = "http://demo.suitepad.systems/1.1/search/tweets.json";
+    url += "?" + jQuery("#inputForm").serialize();
+    url = encodeURI(url);
+    console.log(fName+" url : "+url);
+    //Cross-Origin Request may get blocked for JSON reqs... use JSONP
+    jQuery.ajax({url: url, dataType: "jsonp"});   
+}
+
+
+
+function parseTweets(data){
+    var html = "";
+    var keys = Object.keys(data);
+    console.log("tweets: "+ data);
 }
 
 /* Get current location from IP address: */
 function getCurrentLocation(){
     var response = "parseLocation";
-    console.log("geoCurr:"+jQuery("#geocodeCurr").val());
+    console.log("before: geoCurr:"+jQuery("#geocodeCurr").val());
     if (!jQuery("#geocodeCurr").val()){
         var url = "https://freegeoip.net/json/?callback="+response;
         
@@ -297,7 +302,9 @@ function getCurrentLocation(){
         jQuery.ajax({url: url, dataType: "jsonp"});
         console.log("request made!");
     }
-    
+    else{
+        makePopover();
+    }
 }
 
 /* this parses the ajax request response: */
@@ -332,13 +339,7 @@ var parseLocation = function (jsonp){
         updateRadius(); // call this to add radius value to geocode, even if nothing specified
         
         // make popover:
-        jQuery("#locInfoLink").popover({
-        content: "Enter location name<br>or<br>set location to: <a href='\#' id='popoverLink' onclick='setCurrentLocation()'><b> "+ city +"</b></a>",
-        placement: "bottom",
-        triger: "focus",
-        delay: 100,
-        html:true
-    });
+        makePopover();
     //jQuery("#popoverLink").click(setCurrentLocation);
 }
 
@@ -350,9 +351,6 @@ function getCoordinates(){
     var longitude = "";
     if (text){
         var url = "https://nominatim.openstreetmap.org/search?format=json&q="+text;
-        // https://api.twitter.com/1.1/search/tweets.json?q=%40twitterapi
-        // https://demo.suitepad.systems/1.1/search/tweets.json?q=%40twitterapi
-
         console.log("url: "+url);
         jQuery.ajax({
             url: url, 
@@ -363,8 +361,6 @@ function getCoordinates(){
                 // grab only the first result:
                 latitude = data[0].lat;
                 longitude = data[0].lon;
-                //jQuery("#latInput").val(data[0].lat);
-                //jQuery("#longInput").val(data[0].lon);
                 jQuery("#geocodeInput").val(""+latitude+","+longitude+","+radius);
                 updateRadius();
                 console.log("geoIn:"+jQuery("#geocodeInput").val());
@@ -374,20 +370,28 @@ function getCoordinates(){
     else {
         jQuery("#geocodeInput").val(""); // delete geocode information!
     }
-
-    /*
-    jQuery.getJSON(url, function(jsonp){
-        jQuery("#jsonResponse").html(JSON.stringify(jsonp, null, 2));
-        var html = "";
-        jsonp.forEach(function(val){
-            var keys = Object.keys(val);
-            keys.forEach(function(key){
-                html += "key: "+ key + "val: "+ val[key];
-            });
-            
-        });
-    });
-    setShareLink();
-    */
     
 }
+
+/* DELETE SECRETS BEFORE POSTING!!! */
+/* Just tried to make authentication with twitter... failed...*/
+function getAccessToken () {
+    var secret = encodeURI("");
+    var key = encodeURI("");   
+    var keyAndSecret = key + ":" + secret;
+    var encoded = btoa(keyAndSecret);
+
+    var authRequest = new XMLHttpRequest();
+    authRequest.open("POST", "https://api.twitter.com/oauth2/token");
+    authRequest.setRequestHeader("Authorization", "Basic " + encoded);
+    authRequest.setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
+    authRequest.onreadystatechange = function () {
+        if (authRequest.readyState == 4) {
+            var accessToken = JSON.parse(authRequest.response);
+            console.log("access token:", accessToken);
+        }
+    }           
+    authRequest.send("grant_type=client_credentials");
+
+}
+

@@ -31,6 +31,11 @@
     margin-left: 20px;
 }
 
+.panel-default{
+    min-width: 440px;
+    
+}
+
 #searchInput{
     width: 200px;
 }

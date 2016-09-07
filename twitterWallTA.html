@@ -69,13 +69,12 @@
                         <input type="text" class="hidden" name="" id="placeCurr">
                         <input type="text" class="hidden" name="" id="geocodeCurr">
                         
-                        <input type="text" class="hidden" name="" id="latInput" value="" display=""></input>
-                        <input type="text" class="hidden" name="" id="longInput" value="" display=""></input>
                         <input type="text" class="hidden" name="geocode" id="geocodeInput" value="" display=""></input>
                     </div>
                     <div class="form-group form-width-1">
                         <label class="visible-xs-inline-block" for="radiusInput">Radius</label>
                         <input type="text" class="form-control" placeholder="Radius" name="" id="radiusInput">
+                        
                     </div>
                   </div>
                   
@@ -84,8 +83,9 @@
                         <input type="text" class="form-control" placeholder="Language" name="lang" id="languageInput" onchange="validLanguage(this)">
                         <span class="glyphicon form-control-feedback" id="languageFeedback" aria-hidden="true"></span>
                   </div>
+                  <input type="text" class="hidden" name="callback" id="tweetCallback" value="" display=""></input>
                 </div>
-                <button type="submit" class="btn btn-default">Search</button>
+                <button type="submit" class="btn btn-default">Submit</button>
               </form>
             </div><!-- /.navbar-collapse -->
             
@@ -121,11 +121,33 @@
           </div><!-- /.container-fluid -->
         </nav>
 
-    </div>
-    <div class="">
+    </div> <!--nav-div -->
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-4 panel panel-default">
+                <div class="panel-body">A Basic Panel 
+                    <a href="#" title="Dismissible popover" data-toggle="popover" data-trigger="focus" data-content="Click anywhere in the document to close this popover">Click <strong>me</strong></a>
+                </div>
+            </div>
+                
+            <div class="col-sm-4 panel panel-default">
+                <div class="panel-body">A Basic Panel 
+                <a href="#" onclick="getNewTweets()">Get Tweets</a>
+                
+                </div>
+            </div>
+                
+            <div class="col-sm-4 panel panel-default">
+                <div class="panel-body">A Basic Panel
+                <a href="#" onclick="getAccessToken()">Get tokens...</a>
+                </div>
+            </div>
+            
+        </div> <!-- class row -->
+        
 
-
-    </div>
+    </div> <!-- container -->
 
 </div>
   
