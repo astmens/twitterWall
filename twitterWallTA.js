@@ -6,7 +6,7 @@ window.onload = function onLoadExec(){
 
     setActions();
     
-    localStorageGetData();
+    localStorageGetData(); // -> populateSettings(...) -> getNewTweets()
     
     getCurrentLocation();
     
@@ -18,10 +18,10 @@ window.onload = function onLoadExec(){
 
 }
 
-
+/* Set actions and default values */
 function setActions(){
     var tweetCallback = "parseTweets";
-
+    var tweetCountReq = 20; // max 100
     //var url = "https://api.twitter.com/1.1/search/tweets.json"; // {"errors":[{"code":32,"message":"Could not authenticate you."}]}
     //var url = "https://demo.suitepad.systems/1.1/search/tweets.json"; // This site can’t be reached ERR_CONNECTION_REFUSED; demo.suitepad.systems refused to connect.
     var url = "http://demo.suitepad.systems/1.1/search/tweets.json"; // gets JSON file!!!
@@ -32,12 +32,13 @@ function setActions(){
     jQuery("#radiusInput").change(updateRadius);
     jQuery("#inputForm").submit(function(){ return inputFormSubmit()});
     jQuery("#inputForm").attr("action", url);
+    jQuery("#tweetCount").val(tweetCountReq);
     jQuery("#tweetCallback").val(tweetCallback);
     
     jQuery("#clearMenu").click(function(){ localStorage.clear();});
     
     // init all popovers:
-    makeWarnPopover();  // not active...
+    //makeWarnPopover();  // not active...
     //jQuerry("#seachInput").data("bs.popover");
     jQuery('[data-toggle="popover"]').popover();
 }
@@ -52,21 +53,20 @@ function toggleSetName(elem){
     
 }
 /* --- localStorage --- */
-//var dataKeysName = "myKeys";
 var timeKeysName = "timeID";
 // Object {searchInput: "<text>", placeInput: "<place>", radiusInput: "<r>", geocodeInput: "<lat>,<long>,<r>", languageInput: "<lang>", ...}
+/* */
 function localStorageGetData(){
         //var myKeys = localStorage.getItem(dataKeysName);
         var timeKeys = localStorage.getItem(timeKeysName);
         
-        //console.log(dataKeysName+": "+myKeys);
-        console.log(timeKeysName+": "+timeKeys);
+        //console.log(timeKeysName+": "+timeKeys);
         if (timeKeys){
             timeKeys = JSON.parse(timeKeys);
             for (var i in timeKeys){
                 var timeID = timeKeys[i];
                 var dataset = localStorage.getItem(timeID);
-                console.log("timeID: "+timeID+" data: "+dataset);
+                //console.log("timeID: "+timeID+" data: "+dataset);
                 var dataObj = JSON.parse(dataset);
                 //console.log(dataKeysName+": "+ (typeof dataKeys)+" "+dataKeys);
                 for (var key in dataObj) {
@@ -76,7 +76,9 @@ function localStorageGetData(){
                     jQuery("#"+key).val(value)
                     //console.log("Got: "+key+": "+ value );
                 }
-                // save current settings to setting Menu:
+                jQuery("#timeInput").val(timeID);
+                
+                // Display current settings in the Menu:
                 populateSettings(timeID, dataObj);
                 //get the search results width current settings:
                 getNewTweets();
@@ -96,17 +98,19 @@ function localStorageSaveData(){
         timeKeys.push(timeID);
     }
     localStorage.setItem(timeKeysName, JSON.stringify(timeKeys)); // 
-    //localStorage.setItem(dataKeysName, JSON.stringify(dataKeys)); // store these with know name stored in global var dataKeysName
     var dataObj = {};
     for (var id in dataKeys){
         var key = dataKeys[id];
         var value = jQuery("#"+key).val();
         dataObj[key] = value;
         //localStorage.setItem(key, value);
-        console.log(key+": "+ value );
+        //console.log(key+": "+ value );
     }
     
     localStorage.setItem(timeID, JSON.stringify(dataObj));
+    
+    // Display current settings in the Menu:
+    populateSettings(timeID, dataObj);
     /*
 
     */
@@ -156,13 +160,16 @@ function removeThisSet(elem){
     var idx = timeKeys.indexOf(time);
     if ( (idx > -1) && (time != null) ){
         timeKeys.splice(idx,1);
-        console.log("new timeKeys:"+timeKeys);
+        //console.log("new timeKeys:"+timeKeys);
         localStorage.setItem(timeKeysName, JSON.stringify(timeKeys)); // remove the key
         localStorage.removeItem(time);  // remove the data
     }
     // remove the setting entry displayed:
     var parent = elem.parentNode;
     parent.parentNode.removeChild(parent);
+    
+    // additionaly remove also tweet results displayed:
+    jQuery(".timeID"+time).remove();
 }
 
 function inputFormSubmit(){
@@ -172,7 +179,7 @@ function inputFormSubmit(){
         jQuery("#searchInput").removeClass("has-error");
         var seconds = Math.round(new Date().getTime() / 1000);
         jQuery("#timeInput").val(""+seconds);
-        localStorageSaveData();
+        localStorageSaveData(); //  -> populateSettings(..)
         getNewTweets(); // insted submitting issue axaj request... 
     }
     else{
@@ -202,7 +209,7 @@ function updateGeocodeRadius(radius, geocodeId){
         jQuery("#"+geocodeId).val(geocode);
 
 
-        console.log("updated "+ geocodeId+ ": "+ geocode);
+        //console.log("updated "+ geocodeId+ ": "+ geocode);
     }
     if (jQuery("#geocodeInput").val()){
         jQuery("#radiusInput").val(radius);     // adding radius to input field
@@ -246,7 +253,7 @@ function defaultSearch(){
 function validLanguage(elem){
     var input = elem.value;
     if (validateChoice(input)){
-        console.log("language: " + input + " Valid!");
+        //console.log("language: " + input + " Valid!");
         jQuery("#languageInputDiv").removeClass("has-error");
         jQuery("#languageFeedback").removeClass("glyphicon-remove");
         jQuery("#languageInputDiv").addClass("has-success");
@@ -288,6 +295,20 @@ function makeWarnPopover(){
     });
 }
 
+function formatLinkURLs(text, urls){
+    var rez = text;
+    if(text && urls){
+    
+        for (var i = 0; i < urls.length; i++){
+            var urlOld = urls[i].url;
+            var urlNew = "<a href='https://" + urls[i].display_url + "'>" + urls[i].display_url + "</a>";
+            rez = text.replace(urlOld, urlNew);
+            //console.log("url: " + rez);
+        }
+    }
+    return rez;
+}
+
 /*...*/
 function getNewTweets(){
     // https://api.twitter.com/1.1/search/tweets.json?q=%40twitterapi
@@ -296,31 +317,20 @@ function getNewTweets(){
     var url = "http://demo.suitepad.systems/1.1/search/tweets.json";
     url += "?" + jQuery("#inputForm").serialize();
     url = encodeURI(url);
+    url = url.replace(/%252C/gi, ","); // need to decode "," to work correctly
     console.log(fName+" url : "+url);
     //Cross-Origin Request may get blocked for JSON reqs... use JSONP
     jQuery.ajax({url: url, dataType: "jsonp"});   
 }
-function formatLinkURLs(text, urls){
-    var rez = text;
-    if(text && urls){
-    
-        for (var i = 0; i < urls.length; i++){
-            var urlOld = urls[i].url;
-            var urlNew = "<a href='" + urls[i].display_url + "'>" + urls[i].display_url + "</a>";
-            rez = text.replace(urlOld, urlNew);
-            console.log("url: " + rez);
-        }
-    }
-    return rez;
-}
 
-
+/*  */
 function parseTweets(data){
   try{
     var tweetList = document.getElementById("tweetList");
     var docFrag = document.createDocumentFragment();
 
     var statuses = data.statuses;
+    console.log("Got " + statuses.length + " of " + jQuery("#tweetCount").val() + "tweets!");
     for (var i = 0; i < statuses.length; i++){
         var tweet = statuses[i];
         var id_str = tweet.id_str;
@@ -331,53 +341,57 @@ function parseTweets(data){
         var profilePic = user.profile_image_url;
         var media = tweet.entities.media;
         var urls = tweet.entities.urls;
+        var timeID = jQuery("#timeInput").val(); // get current dataset timeID, add class for selecting this set!
         
-        var parent = document.createElement("li");
-        var parentDiv = document.createElement("div");
-        var blockquote = document.createElement("blockquote");
-        var paragraph = document.createElement("p"); 
-        // var img = document.createElement("img");
-        var footer = document.createElement("footer");
-        var cite = document.createElement("cite");
-        var span = document.createElement("span");
+        if (document.getElementById("tweetList" + id_str) === null){
         
-        text = formatLinkURLs(text, urls);
-        blockquote.appendChild(paragraph);
-        
-        jQuery(parent).attr({"class": "tweetList tweetListElem ", id: "tweetList"+id_str});
-        jQuery(parentDiv).attr({"class": "tweetDiv", id: "tweetDiv"+id_str});
-        jQuery(blockquote).attr({"class": "tweetQuote", id: "tweetQuote"+id_str});
-        jQuery(paragraph).attr({"class": "tweetP", id: "tweetP"+id_str});
-        if (media){
-            for (var k = 0; k < media.length; k++){
-                var imgLnk = document.createElement("a");
-                var img = document.createElement("img");
-                var img_lnk = media[k].media_url;
-                jQuery(imgLnk).attr({"class": "tweetImgLnk", id: "tweetImgLnk"+id_str, href: img_lnk, target: "_blank"});
-                jQuery(img).attr({"class": "tweetImg", id: "tweetImg"+id_str, src: img_lnk});
-                imgLnk.appendChild(img);
-                blockquote.appendChild(imgLnk);
-                text = text.replace(media[k].url, ""); // remove media url from text field
+            var parent = document.createElement("li");
+            var parentDiv = document.createElement("div");
+            var blockquote = document.createElement("blockquote");
+            var paragraph = document.createElement("p"); 
+            // var img = document.createElement("img");
+            var footer = document.createElement("footer");
+            var cite = document.createElement("cite");
+            var span = document.createElement("span");
+            
+            text = formatLinkURLs(text, urls);
+            blockquote.appendChild(paragraph);
+            
+            jQuery(parent).attr({"class": "tweetList tweetListElem timeID" + timeID, id: "tweetList"+id_str});
+            jQuery(parentDiv).attr({"class": "tweetDiv", id: "tweetDiv"+id_str});
+            jQuery(blockquote).attr({"class": "tweetQuote", id: "tweetQuote"+id_str});
+            jQuery(paragraph).attr({"class": "tweetP", id: "tweetP"+id_str});
+            if (media){
+                for (var k = 0; k < media.length; k++){
+                    var imgLnk = document.createElement("a");
+                    var img = document.createElement("img");
+                    var img_lnk = media[k].media_url;
+                    jQuery(imgLnk).attr({"class": "tweetImgLnk", id: "tweetImgLnk"+id_str, href: img_lnk, target: "_blank"});
+                    jQuery(img).attr({"class": "tweetImg", id: "tweetImg"+id_str, src: img_lnk});
+                    imgLnk.appendChild(img);
+                    blockquote.appendChild(imgLnk);
+                    text = text.replace(media[k].url, ""); // remove media url from text field
+                }
             }
-        }
-        jQuery(paragraph).html(text);
-        
-        jQuery(footer).attr({"class": "tweetFooter", id: "tweetFooter"+id_str});
-        jQuery(cite).attr({"class": "tweetCite", id: "tweetCite"+id_str});
-        jQuery(span).attr({"class": "tweetSpan", id: "tweetSpan"+id_str})
-            .html("<strong>" + fullName + "</strong>" + " <a href='https://www.twitter.com/" + userName+ "'>@" + userName + "</a>");
-        
-        blockquote.appendChild(footer);
-        footer.appendChild(cite);
-        cite.appendChild(span);
-        
-        parentDiv.appendChild(blockquote);
-        parent.appendChild(parentDiv);
-        docFrag.appendChild(parent);
+            jQuery(paragraph).html(text);
+            
+            jQuery(footer).attr({"class": "tweetFooter", id: "tweetFooter"+id_str});
+            jQuery(cite).attr({"class": "tweetCite", id: "tweetCite"+id_str});
+            jQuery(span).attr({"class": "tweetSpan", id: "tweetSpan"+id_str})
+                .html("<strong>" + fullName + "</strong>" + " <a href='https://www.twitter.com/" + userName+ "'>@" + userName + "</a>");
+            
+            blockquote.appendChild(footer);
+            footer.appendChild(cite);
+            cite.appendChild(span);
+            
+            parentDiv.appendChild(blockquote);
+            parent.appendChild(parentDiv);
+            docFrag.appendChild(parent);    
+        } //if element is not already present on DOM
     } // for i
     
     
-    tweetList.appendChild(docFrag);
+    tweetList.insertBefore(docFrag, tweetList.childNodes[0]); // put new results in front!
 
   } // try
   catch(e){
@@ -389,13 +403,13 @@ function parseTweets(data){
 /* Get current location from IP address: */
 function getCurrentLocation(){
     var response = "parseLocation";
-    console.log("before: geoCurr:"+jQuery("#geocodeCurr").val());
+    //console.log("before: geoCurr:"+jQuery("#geocodeCurr").val());
     if (!jQuery("#geocodeCurr").val()){
         var url = "https://freegeoip.net/json/?callback="+response;
         
-        console.log("url: "+url);
+        //console.log("url: "+url);
         jQuery.ajax({url: url, dataType: "jsonp"});
-        console.log("request made!");
+        //console.log("request made!");
     }
     else{
         updatePopover();
@@ -417,15 +431,15 @@ var parseLocation = function (jsonp){
                 if (key == "city"){
                     city = jsonp[key];
                     jQuery("#placeCurr").val(""+jsonp[key]);
-                    console.log("city: "+jsonp[key]);
+                    //console.log("city: "+jsonp[key]);
                 }
                 else if(key == "latitude"){
                     latitude = jsonp[key];
-                    console.log("lat: "+jsonp[key]);
+                    //console.log("lat: "+jsonp[key]);
                 }
                 else if (key == "longitude"){
                     longitude = jsonp[key];
-                    console.log("long: " + jsonp[key]);
+                    //console.log("long: " + jsonp[key]);
                 }
             });
         geocode = ""+latitude+","+longitude+",";
@@ -446,13 +460,13 @@ function getCoordinates(){
     var longitude = "";
     if (text){
         var url = "https://nominatim.openstreetmap.org/search?format=json&q="+text;
-        console.log("url: "+url);
+        //console.log("url: "+url);
         jQuery.ajax({
             url: url, 
             dataType: "json", 
             success: function(data, status) {
                 if( status == "success"){
-                console.log( "stat: " + status + " lat:", data[0].lat + " lon: " + data[0].lon );
+                //console.log( "stat: " + status + " lat:", data[0].lat + " lon: " + data[0].lon );
                 // grab only the first result:
                 latitude = data[0].lat;
                 longitude = data[0].lon;
@@ -468,25 +482,4 @@ function getCoordinates(){
     
 }
 
-/* DELETE SECRETS BEFORE POSTING!!! */
-/* Just tried to make authentication with twitter... failed...*/
-function getAccessToken () {
-    var secret = encodeURI("");
-    var key = encodeURI("");   
-    var keyAndSecret = key + ":" + secret;
-    var encoded = btoa(keyAndSecret);
-
-    var authRequest = new XMLHttpRequest();
-    authRequest.open("POST", "https://api.twitter.com/oauth2/token");
-    authRequest.setRequestHeader("Authorization", "Basic " + encoded);
-    authRequest.setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
-    authRequest.onreadystatechange = function () {
-        if (authRequest.readyState == 4) {
-            var accessToken = JSON.parse(authRequest.response);
-            console.log("access token:", accessToken);
-        }
-    }           
-    authRequest.send("grant_type=client_credentials");
-
-}
 

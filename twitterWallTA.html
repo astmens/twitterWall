@@ -5,7 +5,7 @@
     <title> Twitter Wall </title>
     <link href="" rel="icon" type="image/x-icon">
     <link href='https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css' rel='stylesheet' type="text/css">
-    <!-- Drowdown menus require transition.js & collapse.js & jQuerry or bootstrap.js-->
+    <!-- Dropdown menus require transition.js & collapse.js & jQuerry or bootstrap.js-->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
@@ -40,9 +40,9 @@
                 <li class="dropdown">
                   <a href="#" class="dropdown-toggle navbar-brand" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-twitter-square" aria-hidden="true"></i> Wall <span class="caret"></span></a>
                   <ul class="dropdown-menu" id="wallMenu">
-                    <li><a href="#settingsCollapseDiv" onclick="toggleSetName(this)" class="" data-toggle="collapse" data-target="#settingsCollapseDiv" aria-expanded="false">Show settings</a></li>
+                    <li><a href="#" onclick="toggleSetName(this)" class="" data-toggle="collapse" data-target="#settingsCollapseDiv" aria-expanded="false">Show settings</a></li>
                     <li role="separator" class="divider"></li>
-                    <li><a href="" id="clearMenu">Clear all settings</a></li>
+                    <li><a href="#" id="clearMenu">Clear all settings</a></li>
 
                   </ul>
                 </li>
@@ -54,12 +54,12 @@
               
               <form class="navbar-form navbar-left form-group form-inline" id= "inputForm">
                 <div class="form-group">
-                  <div class="form-group form-width-2">
+                  <div class="form-group">
                     <label class="visible-xs-inline-block" for="searchInput">Search text</label>
                     <input type="text" class="form-control" placeholder="Text" name="q" id="searchInput" value="" data-toggle="popover" data-trigger="manual">
                   </div>
                   <div class="form-group">
-                    <div class="form-group form-width-2">
+                    <div class="form-group ">
                         <label class="visible-xs-inline-block" for="placeInput">Location</label>
                         <input type="text" class="form-control zId1" placeholder="Location" name="" id="placeInput" onchange="">
                         <a href="#" class="zId2" onclick="" id="locInfoLink" 
@@ -72,18 +72,20 @@
                         
                         <input type="text" class="hidden" name="geocode" id="geocodeInput" value="" display=""></input>
                     </div>
-                    <div class="form-group form-width-1">
+                    <div class="form-group ">
                         <label class="visible-xs-inline-block" for="radiusInput">Radius</label>
                         <input type="text" class="form-control" placeholder="Radius" name="" id="radiusInput">
                         
                     </div>
                   </div>
                   
-                  <div class="form-group form-width-1 has-feedback" id="languageInputDiv">
+                  <div class="form-group has-feedback" id="languageInputDiv">
                         <label class="visible-xs-inline-block" for="languageInput">Language</label>
                         <input type="text" class="form-control" placeholder="Language" name="lang" id="languageInput" onchange="validLanguage(this)">
                         <span class="glyphicon form-control-feedback" id="languageFeedback" aria-hidden="true"></span>
                   </div>
+                  
+                  <input type="text" class="hidden" name="count" id="tweetCount" value="" display=""></input>
                   <input type="text" class="hidden" name="callback" id="tweetCallback" value="" display=""></input>
                 </div>
                 <button type="submit" class="btn btn-default">Submit</button>
@@ -126,32 +128,14 @@
     
     <div class="container">
 
-        <ol class="tweetList row" id="tweetList">
+
+    </div> <!-- container -->
+    
+    <div class="">
+
+        <ol class="tweetList" id="tweetList">
             
         </ol>
-
-        <div class="row">
-            <div class="col-sm-4 panel panel-default">
-                <div class="panel-body">A Basic Panel 
-                    <a href="#" title="Dismissible popover" data-toggle="popover" data-trigger="focus" data-content="Click anywhere in the document to close this popover">Click <strong>me</strong></a>
-                </div>
-            </div>
-                
-            <div class="col-sm-4 panel panel-default">
-                <div class="panel-body">A Basic Panel 
-                <a href="#" onclick="getNewTweets()">Get Tweets</a>
-                
-                </div>
-            </div>
-                
-            <div class="col-sm-4 panel panel-default">
-                <div class="panel-body">A Basic Panel
-                <a href="#" onclick="getAccessToken()">Get tokens...</a>
-                </div>
-            </div>
-            
-        </div> <!-- class row -->
-        
 
     </div> <!-- container -->
 
