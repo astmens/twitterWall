@@ -3,11 +3,14 @@ jQuery.noConflict();
 //console.log(getCodeFromText("latvian"));
 
 window.onload = function onLoadExec(){
+
+    setActions();
+    
     localStorageGetData();
     
-    setActions();
-        
     getCurrentLocation();
+    
+    //parseTweets();
     
     //defaultSearch();
     
@@ -15,14 +18,6 @@ window.onload = function onLoadExec(){
 
 }
 
-/* hide popover when clicked on document and it is visible */
-jQuery(document).click(function(){ 
-    
-    if(jQuery('#popoverLink').is(':visible')) {
-        popoverHide();
-    }
-    
-});
 
 function setActions(){
     var tweetCallback = "parseTweets";
@@ -40,7 +35,13 @@ function setActions(){
     jQuery("#tweetCallback").val(tweetCallback);
     
     jQuery("#clearMenu").click(function(){ localStorage.clear();});
+    
+    // init all popovers:
+    makeWarnPopover();  // not active...
+    //jQuerry("#seachInput").data("bs.popover");
+    jQuery('[data-toggle="popover"]').popover();
 }
+
 function toggleSetName(elem){
     if(elem.innerHTML === "Show settings"){
         elem.innerHTML = "Hide settings";
@@ -53,6 +54,7 @@ function toggleSetName(elem){
 /* --- localStorage --- */
 //var dataKeysName = "myKeys";
 var timeKeysName = "timeID";
+// Object {searchInput: "<text>", placeInput: "<place>", radiusInput: "<r>", geocodeInput: "<lat>,<long>,<r>", languageInput: "<lang>", ...}
 function localStorageGetData(){
         //var myKeys = localStorage.getItem(dataKeysName);
         var timeKeys = localStorage.getItem(timeKeysName);
@@ -74,7 +76,10 @@ function localStorageGetData(){
                     jQuery("#"+key).val(value)
                     //console.log("Got: "+key+": "+ value );
                 }
+                // save current settings to setting Menu:
                 populateSettings(timeID, dataObj);
+                //get the search results width current settings:
+                getNewTweets();
             }
         }
 
@@ -163,17 +168,21 @@ function removeThisSet(elem){
 function inputFormSubmit(){
     var fName = arguments.callee.toString().match(/function ([^\(]+)/)[1];
     console.log(fName+": "+jQuery("#inputForm").serialize());
-    var seconds = Math.round(new Date().getTime() / 1000);
-    jQuery("#timeInput").val(""+seconds);
-    localStorageSaveData();
-    getNewTweets(); // insted submitting issue axaj request... 
+    if (jQuery("#searchInput").val() !== ""){ // search field is required!
+        jQuery("#searchInput").removeClass("has-error");
+        var seconds = Math.round(new Date().getTime() / 1000);
+        jQuery("#timeInput").val(""+seconds);
+        localStorageSaveData();
+        getNewTweets(); // insted submitting issue axaj request... 
+    }
+    else{
+        // don't submit - invalid input!
+        jQuery("#searchInput").addClass("has-error");
+    }
     return false; // if request is posted as FORM, then response is offered as file download not JSON data for parsing... cancel submit!
 }
 
-// hide the popover:
-function popoverHide(){
-    jQuery('#locInfoLink').popover("hide");
-}
+
 function updateRadius(){
     var radius = jQuery("#radiusInput").val();
     if (radius == "") {
@@ -203,7 +212,6 @@ function updateGeocodeRadius(radius, geocodeId){
 /* Set current location got from IP address for form input */
 function setCurrentLocation(){
     
-
     var geocode = jQuery("#geocodeCurr").val();
     var location = jQuery("#placeCurr").val();
     jQuery("#geocodeInput").val(geocode);
@@ -245,10 +253,10 @@ function validLanguage(elem){
         jQuery("#languageFeedback").addClass("glyphicon-ok");
     }
     else{
-        console.log("language: " + input + " Invalid!!");
         jQuery("#languageInputDiv").removeClass("has-success");
         jQuery("#languageFeedback").removeClass("glyphicon-ok");
         if(input !== ""){
+            console.log("language: " + input + " Invalid!!");
             jQuery("#languageInputDiv").addClass("has-error");
             jQuery("#languageFeedback").addClass("glyphicon-remove");
         }
@@ -256,18 +264,28 @@ function validLanguage(elem){
 }
 
 
-function makePopover(){
-    // make popover:
+function updatePopover(){
+    // update popover content:
+    // $(".notes").data("bs.popover").options.content="Content1"; // faster because doesn't update the DOM
+    // vs 
+    // $(".notes").attr("data-content","Content1");
     var city = jQuery("#placeCurr").val();
-    jQuery("#locInfoLink").popover({
-        "content": "Enter location name<br>or<br>set location to: <a href='\#' id='popoverLink' onclick='setCurrentLocation()'><b> "+ city +"</b></a>",
+    var content = "Enter location name<br>or<br>set location to: <a href='\#' id='popoverLink' onclick='setCurrentLocation()'><b> "+ city +"</b></a>";
+    jQuery("#locInfoLink").attr({"data-content":content});
+
+    var p = jQuery("#locInfoLink").data("bs.popover").options;
+    p.placement = "bottom";
+    p.html = true;    
+    
+}
+function makeWarnPopover(){
+    jQuery("#searchInput").popover({
+        content: '<p class="alert-warning">Search keyword must be provided.</p>',
         placement: "bottom",
-        "data-toggle": "popover",
-        triger: "focus",
-        delay: 100,
+        //trigger: "focus",
+        //"data-toggle": "popover",
         html:true
     });
-    
 }
 
 /*...*/
@@ -282,13 +300,90 @@ function getNewTweets(){
     //Cross-Origin Request may get blocked for JSON reqs... use JSONP
     jQuery.ajax({url: url, dataType: "jsonp"});   
 }
-
+function formatLinkURLs(text, urls){
+    var rez = text;
+    if(text && urls){
+    
+        for (var i = 0; i < urls.length; i++){
+            var urlOld = urls[i].url;
+            var urlNew = "<a href='" + urls[i].display_url + "'>" + urls[i].display_url + "</a>";
+            rez = text.replace(urlOld, urlNew);
+            console.log("url: " + rez);
+        }
+    }
+    return rez;
+}
 
 
 function parseTweets(data){
-    var html = "";
-    var keys = Object.keys(data);
-    console.log("tweets: "+ data);
+  try{
+    var tweetList = document.getElementById("tweetList");
+    var docFrag = document.createDocumentFragment();
+
+    var statuses = data.statuses;
+    for (var i = 0; i < statuses.length; i++){
+        var tweet = statuses[i];
+        var id_str = tweet.id_str;
+        var text = tweet.text;
+        var user = tweet.user;
+        var fullName = user.name;
+        var userName = user.screen_name;
+        var profilePic = user.profile_image_url;
+        var media = tweet.entities.media;
+        var urls = tweet.entities.urls;
+        
+        var parent = document.createElement("li");
+        var parentDiv = document.createElement("div");
+        var blockquote = document.createElement("blockquote");
+        var paragraph = document.createElement("p"); 
+        // var img = document.createElement("img");
+        var footer = document.createElement("footer");
+        var cite = document.createElement("cite");
+        var span = document.createElement("span");
+        
+        text = formatLinkURLs(text, urls);
+        blockquote.appendChild(paragraph);
+        
+        jQuery(parent).attr({"class": "tweetList tweetListElem ", id: "tweetList"+id_str});
+        jQuery(parentDiv).attr({"class": "tweetDiv", id: "tweetDiv"+id_str});
+        jQuery(blockquote).attr({"class": "tweetQuote", id: "tweetQuote"+id_str});
+        jQuery(paragraph).attr({"class": "tweetP", id: "tweetP"+id_str});
+        if (media){
+            for (var k = 0; k < media.length; k++){
+                var imgLnk = document.createElement("a");
+                var img = document.createElement("img");
+                var img_lnk = media[k].media_url;
+                jQuery(imgLnk).attr({"class": "tweetImgLnk", id: "tweetImgLnk"+id_str, href: img_lnk, target: "_blank"});
+                jQuery(img).attr({"class": "tweetImg", id: "tweetImg"+id_str, src: img_lnk});
+                imgLnk.appendChild(img);
+                blockquote.appendChild(imgLnk);
+                text = text.replace(media[k].url, ""); // remove media url from text field
+            }
+        }
+        jQuery(paragraph).html(text);
+        
+        jQuery(footer).attr({"class": "tweetFooter", id: "tweetFooter"+id_str});
+        jQuery(cite).attr({"class": "tweetCite", id: "tweetCite"+id_str});
+        jQuery(span).attr({"class": "tweetSpan", id: "tweetSpan"+id_str})
+            .html("<strong>" + fullName + "</strong>" + " <a href='https://www.twitter.com/" + userName+ "'>@" + userName + "</a>");
+        
+        blockquote.appendChild(footer);
+        footer.appendChild(cite);
+        cite.appendChild(span);
+        
+        parentDiv.appendChild(blockquote);
+        parent.appendChild(parentDiv);
+        docFrag.appendChild(parent);
+    } // for i
+    
+    
+    tweetList.appendChild(docFrag);
+
+  } // try
+  catch(e){
+    var parseTweetsError = e;
+    console.log(e);
+  }
 }
 
 /* Get current location from IP address: */
@@ -303,7 +398,7 @@ function getCurrentLocation(){
         console.log("request made!");
     }
     else{
-        makePopover();
+        updatePopover();
     }
 }
 
@@ -339,7 +434,7 @@ var parseLocation = function (jsonp){
         updateRadius(); // call this to add radius value to geocode, even if nothing specified
         
         // make popover:
-        makePopover();
+        updatePopover();
     //jQuery("#popoverLink").click(setCurrentLocation);
 }
 

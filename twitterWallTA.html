@@ -56,13 +56,14 @@
                 <div class="form-group">
                   <div class="form-group form-width-2">
                     <label class="visible-xs-inline-block" for="searchInput">Search text</label>
-                    <input type="text" class="form-control" placeholder="Text" name="q" id="searchInput" value="">
+                    <input type="text" class="form-control" placeholder="Text" name="q" id="searchInput" value="" data-toggle="popover" data-trigger="manual">
                   </div>
                   <div class="form-group">
                     <div class="form-group form-width-2">
                         <label class="visible-xs-inline-block" for="placeInput">Location</label>
                         <input type="text" class="form-control zId1" placeholder="Location" name="" id="placeInput" onchange="">
-                        <a href="#" class="zId2 popovers" onclick="" id="locInfoLink" >
+                        <a href="#" class="zId2" onclick="" id="locInfoLink" 
+                            data-content="Enter location name<br>or<br>set location to: ..." data-toggle="popover" data-trigger="focus">
                             <span class="glyphicon glyphicon-info-sign zId2" id="locInfo" aria-hidden="true"></span>
                         </a>
                         <input type="text" class="hidden" name="" id="timeInput">
@@ -124,6 +125,11 @@
     </div> <!--nav-div -->
     
     <div class="container">
+
+        <ol class="tweetList row" id="tweetList">
+            
+        </ol>
+
         <div class="row">
             <div class="col-sm-4 panel panel-default">
                 <div class="panel-body">A Basic Panel 
